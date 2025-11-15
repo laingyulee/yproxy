@@ -56,7 +56,7 @@ def get_ticker_history(symbol: str, period: str = "1mo", interval: str = "1d"):
         raise HTTPException(status_code=500, detail=f"An error occurred while fetching history for {symbol}: {str(e)}")
 
 @app.get("/ticker/{symbol}/analyst-price-targets")
-def get_analyst_price_target(symbol: str):
+def get_analyst_price_targets(symbol: str):
     """
     Get analyst price targets for a given stock ticker.
     """
