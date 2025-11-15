@@ -10,8 +10,10 @@ def dataframe_to_json(df: pd.DataFrame):
     if df.empty:
         return []
     df = df.reset_index()
-    # Replace infinity with NaN, then fill all NaN with None for JSON compliance
-    df = df.replace([np.inf, -np.inf], np.nan).fillna(None)
+    # Replace infinity with NaN for JSON compliance
+    df = df.replace([np.inf, -np.inf], np.nan)
+    # Replace all NaN values with None, which is JSON-compliant (null)
+    df = df.where(pd.notna(df), None)
     # Convert any datetime-like columns to string format
     for col in df.columns:
         if pd.api.types.is_datetime64_any_dtype(df[col]):
