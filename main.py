@@ -1,6 +1,7 @@
 import yfinance as yf
 from fastapi import FastAPI, HTTPException
 import pandas as pd
+import numpy as np
 
 app = FastAPI()
 
@@ -9,6 +10,8 @@ def dataframe_to_json(df: pd.DataFrame):
     if df.empty:
         return []
     df = df.reset_index()
+    # Replace infinity with NaN, then fill all NaN with None for JSON compliance
+    df = df.replace([np.inf, -np.inf], np.nan).fillna(None)
     # Convert any datetime-like columns to string format
     for col in df.columns:
         if pd.api.types.is_datetime64_any_dtype(df[col]):
@@ -52,14 +55,14 @@ def get_ticker_history(symbol: str, period: str = "1mo", interval: str = "1d"):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred while fetching history for {symbol}: {str(e)}")
 
-@app.get("/ticker/{symbol}/analyst-price-target")
+@app.get("/ticker/{symbol}/analyst-price-targets")
 def get_analyst_price_target(symbol: str):
     """
     Get analyst price targets for a given stock ticker.
     """
     try:
         ticker = yf.Ticker(symbol)
-        data = ticker.analyst_price_target
+        data = ticker.analyst_price_targets
         if data.empty:
             raise HTTPException(status_code=404, detail=f"No analyst price target data found for ticker '{symbol}'.")
         return dataframe_to_json(data)

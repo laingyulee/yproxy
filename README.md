@@ -6,7 +6,7 @@
 
 *   获取股票综合信息 (`/ticker/{symbol}/info`)
 *   获取股票历史数据 (`/ticker/{symbol}/history`)
-*   获取分析师目标价 (`/ticker/{symbol}/analyst-price-target`)
+*   获取分析师目标价 (`/ticker/{symbol}/analyst-price-targets`)
 *   获取快速概览信息 (`/ticker/{symbol}/fast-info`)
 *   获取公司收入报表 (`/ticker/{symbol}/income-stmt`)
 
@@ -14,7 +14,7 @@
 
 ### 前提条件
 
-*   Python 3.7+
+*   Python 3.9+
 *   pip (Python 包管理器)
 *   Docker (可选，用于容器化部署)
 
@@ -70,8 +70,8 @@
 
 ### 3. 获取分析师目标价
 
-*   **GET** `/ticker/{symbol}/analyst-price-target`
-*   **示例**: `http://127.0.0.1:8000/ticker/AAPL/analyst-price-target`
+*   **GET** `/ticker/{symbol}/analyst-price-targets`
+*   **示例**: `http://127.0.0.1:8000/ticker/AAPL/analyst-price-targets`
 
 ### 4. 获取快速概览信息
 
