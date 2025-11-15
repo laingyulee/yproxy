@@ -9,15 +9,45 @@ def dataframe_to_json(df: pd.DataFrame):
     """Helper function to convert a Pandas DataFrame to a JSON-serializable list of records."""
     if df.empty:
         return []
-    df = df.reset_index()
-    # Replace infinity with NaN for JSON compliance
+    
+    # Replace infinity with NaN, then fill all NaN with None for JSON compliance
     df = df.replace([np.inf, -np.inf], np.nan)
-    # Replace all NaN values with None, which is JSON-compliant (null)
-    df = df.where(pd.notna(df), None)
+    
+    # Handle fillna more robustly to prevent "Must specify a fill 'value' or 'method'" error
+    try:
+        df = df.fillna(value=None)
+    except Exception:
+        # If fillna fails, we'll handle NaN values column by column
+        for col in df.columns:
+            try:
+                df[col] = df[col].fillna(value=None)
+            except Exception:
+                # If even column-wise fillna fails, we'll convert to object and replace
+                df[col] = df[col].astype(object).replace(np.nan, None)
+    
     # Convert any datetime-like columns to string format
     for col in df.columns:
         if pd.api.types.is_datetime64_any_dtype(df[col]):
-            df[col] = df[col].dt.strftime('%Y-%m-%d %H:%M:%S')
+            # NaT values would have been converted to None by fillna.
+            # We need to handle the None values before applying strftime.
+            df[col] = df[col].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S') if pd.notnull(x) else None)
+    
+    # For financial data like income statements, we'll use orient='index' to better preserve
+    # the row names (financial metrics) as keys
+    if isinstance(df.index, pd.MultiIndex):
+        # If there's a MultiIndex, reset it to make it JSON serializable
+        df = df.reset_index()
+    else:
+        # For financial statements, it's often better to convert to dict with index as keys
+        # But for API compatibility, we'll still use records format after ensuring proper types
+        df = df.reset_index()
+    
+    # Convert large numbers to strings if they exceed JavaScript number limits
+    for col in df.columns:
+        if df[col].dtype in ['int64', 'float64']:
+            # Convert values that exceed safe integer limits in JavaScript to strings
+            df[col] = df[col].apply(lambda x: str(x) if pd.notna(x) and (isinstance(x, (int, float)) and (x > 9007199254740991 or x < -9007199254740991)) else x)
+    
     return df.to_dict('records')
 
 @app.get("/")
@@ -65,9 +95,9 @@ def get_analyst_price_targets(symbol: str):
     try:
         ticker = yf.Ticker(symbol)
         data = ticker.analyst_price_targets
-        if data.empty:
+        if not data or data.get('current') is None:
             raise HTTPException(status_code=404, detail=f"No analyst price target data found for ticker '{symbol}'.")
-        return dataframe_to_json(data)
+        return dict(data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
@@ -94,8 +124,8 @@ def get_income_stmt(symbol: str):
     try:
         ticker = yf.Ticker(symbol)
         data = ticker.income_stmt
-        if data.empty:
-            raise HTTPException(status_code=404, detail=f"No income statement data found for ticker '{symbol}'.")
+        # For income statement, sometimes data might be valid but have NaN values
+        # Instead of raising 404, we will return the dataframe (possibly empty)
         return dataframe_to_json(data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")

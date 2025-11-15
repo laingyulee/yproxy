@@ -1,5 +1,5 @@
 # 使用官方的Python运行时作为父镜像
-FROM python:3.9-slim
+FROM python:3.10-slim
 
 # 将工作目录设置为 /app
 WORKDIR /app
