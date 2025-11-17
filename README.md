@@ -1,3 +1,5 @@
+> 从赵国访问Yahoo Finance或者yfinance库都是不可行的。因此需要搭建一个”桥“。
+
 # yfinance API Proxy
 
 这是一个使用 FastAPI 和 yfinance 库构建的 API 代理服务。它允许您通过简单的 HTTP 请求获取股票信息、历史数据、分析师目标价、快速信息和财务报表。
